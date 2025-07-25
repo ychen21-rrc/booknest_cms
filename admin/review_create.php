@@ -5,6 +5,9 @@ function resizeImage($src, $dest, $maxWidth = 600) {
     $newWidth = $maxWidth;
     $newHeight = floor($height * ($maxWidth / $width));
 
+    echo "<script>console.log(width = " . $newWidth . ");</script>";
+    echo "<script>console.log(height = " . $newHeight . ");</script>";
+
     $srcImg = null;
     switch ($type) {
         case IMAGETYPE_JPEG: $srcImg = imagecreatefromjpeg($src); break;
@@ -27,7 +30,7 @@ function resizeImage($src, $dest, $maxWidth = 600) {
     return true;
 }
 
-?>p
+
 require '../includes/auth.php';
 require '../includes/db.php';
 
@@ -40,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user']['id'];
 
     $image_path = null;
+    echo "<script>console.log(file = " . $_FILES['image']['name'] . ");</script>";
     if (!empty($_FILES['image']['name'])) {
         $tmp = $_FILES['image']['tmp_name'];
         $imgName = basename($_FILES['image']['name']);
@@ -52,30 +56,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $stmt = $pdo->prepare("INSERT INTO reviews (title, content, image_path, category_id, user_id) VALUES (?, ?, ?, ?, ?)");
     $stmt->execute([$title, $content, $image_path, $category_id, $user_id]);
-    header("Location: dashboard.php");
+    header("Location: ../dashboard.php");
     exit;
 }
 ?>
-<h2>Create Book Review</h2>
-<form method="post" enctype="multipart/form-data">
-    Title: <input name="title" required><br>
-    Content:<br><textarea name="content" required></textarea><br>
-    Category:
-    <select name="category_id">
-        <?php foreach ($categories as $cat): ?>
-            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-        <?php endforeach; ?>
-    </select><br>
-    Cover Image: <input type="file" name="image"><br>
-    <button type="submit">Submit</button>
-</form>
-
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-<script>
-  tinymce.init({
-    selector: 'textarea',
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Review</title>
+  <script src="https://cdn.tiny.cloud/1/inec7l6556ljszce65ato9jdui6eq0hnk0fwvef4rxb498sh/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+  <script>
+    tinymce.init({
+    selector: '#content',
     plugins: 'link image code',
     toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | code'
-  });
-</script>
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+    document.querySelector("form").addEventListener("submit", function (e) {
+        const content = tinymce.get('content').getContent({ format: 'text' }).trim();
+        if (!content) {
+        alert("Content cannot be empty.");
+        e.preventDefault();
+        }
+    });
+    });
+    </script>
+</head>
+<body>
+<h2>Create Book Review</h2>
+<form method="post" enctype="multipart/form-data">
+  Title: <input name="title" required><br>
+  Content:<br>
+  <textarea name="content" id="content"></textarea><br>
+
+  Category:
+  <select name="category_id">
+      <?php foreach ($categories as $cat): ?>
+          <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+      <?php endforeach; ?>
+  </select><br>
+
+  Cover Image: <input type="file" name="image"><br>
+  <button type="submit">Submit</button>
+</form>Z
+
+</body>
+</html>
 

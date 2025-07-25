@@ -1,20 +1,25 @@
-
 <?php
 session_start();
-$code = substr(str_shuffle("ABCDEFGHJKLMNPQRSTUVWXYZ23456789"), 0, 5);
+
+// 生成随机验证码文本
+$code = strval(rand(1000, 9999));
 $_SESSION['captcha'] = $code;
 
-header("Content-type: image/png");
-$img = imagecreate(120, 40);
-$bg = imagecolorallocate($img, 255, 255, 255);
-$txt = imagecolorallocate($img, 0, 0, 0);
-$line = imagecolorallocate($img, 100, 100, 100);
+// 创建图片
+$width = 100;
+$height = 40;
 
-for ($i = 0; $i < 4; $i++) {
-    imageline($img, rand(0,120), rand(0,40), rand(0,120), rand(0,40), $line);
-}
+header('Content-Type: image/png');
 
-imagestring($img, 5, 20, 10, $code, $txt);
-imagepng($img);
-imagedestroy($img);
+$image = imagecreatetruecolor($width, $height);
+$bg = imagecolorallocate($image, 255, 255, 255); // 背景白色
+$textColor = imagecolorallocate($image, 0, 0, 0); // 黑色文字
+$border = imagecolorallocate($image, 200, 200, 200); // 边框
+
+imagefilledrectangle($image, 0, 0, $width, $height, $bg); // 填充背景
+imagerectangle($image, 0, 0, $width - 1, $height - 1, $border); // 加边框
+imagestring($image, 5, 25, 10, $code, $textColor); // 写验证码
+
+imagepng($image); // 输出图像
+imagedestroy($image); // 释放内存
 ?>

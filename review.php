@@ -1,4 +1,3 @@
-<?php include 'includes/header.php'; ?>
 
 
 <?php
@@ -24,9 +23,11 @@ if (!$r) {
 <?php if ($r['image_path']): ?>
     <img src="<?= $r['image_path'] ?>" width="300"><br><br>
 <?php endif; ?>
-<p><?= nl2br(htmlspecialchars($r['content'])) ?></p>
+<div class="review-content">
+  <?= $r['content'] ?>
+</div>
+<div style="margin: 20px 0; border-top: 1px solid #ccc;"></div>
 
 <?php include 'comments.php'; ?>
 
 
-<?php include 'includes/footer.php'; ?>

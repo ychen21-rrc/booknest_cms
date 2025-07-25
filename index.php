@@ -21,8 +21,6 @@ if ($category_id) {
 $reviews = $stmt->fetchAll();
 $cats = $pdo->query("SELECT * FROM categories")->fetchAll();
 ?>
-<h1>BookNest CMS</h1>
-<p>Categories:</p>
 <ul>
     <li><a href="index.php">All</a></li>
     <?php foreach ($cats as $cat): ?>

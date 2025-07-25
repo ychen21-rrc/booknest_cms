@@ -27,7 +27,6 @@ function resizeImage($src, $dest, $maxWidth = 600) {
     return true;
 }
 
-?>p
 require '../includes/auth.php';
 require '../includes/db.php';
 
@@ -56,14 +55,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $stmt = $pdo->prepare("UPDATE reviews SET title=?, content=?, image_path=?, category_id=? WHERE id=?");
     $stmt->execute([$title, $content, $image_path, $category_id, $id]);
-    header("Location: dashboard.php");
+    header("Location: ../dashboard.php");
     exit;
 }
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Review</title>
+  <script src="https://cdn.tiny.cloud/1/inec7l6556ljszce65ato9jdui6eq0hnk0fwvef4rxb498sh/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+  <script>
+    tinymce.init({
+        selector: '#content',
+        plugins: 'link image code',
+        toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | code'
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+    document.querySelector("form").addEventListener("submit", function (e) {
+        const content = tinymce.get('content').getContent({ format: 'text' }).trim();
+        if (!content) {
+        alert("Content cannot be empty.");
+        e.preventDefault();
+        }
+    });
+    });
+
+    </script>
+</head>
+<body>
 <h2>Edit Review</h2>
 <form method="post" enctype="multipart/form-data">
     Title: <input name="title" value="<?= htmlspecialchars($review['title']) ?>" required><br>
-    Content:<br><textarea name="content" required><?= htmlspecialchars($review['content']) ?></textarea><br>
+    Content:<br><textarea name="content" id="content"><?= htmlspecialchars($review['content']) ?></textarea>
+<br>
     Category:
     <select name="category_id">
         <?php foreach ($categories as $cat): ?>
@@ -75,13 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Cover Image: <input type="file" name="image"><br>
     <button type="submit">Update</button>
 </form>
-
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-<script>
-  tinymce.init({
-    selector: 'textarea',
-    plugins: 'link image code',
-    toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | code'
-  });
-</script>
+</body>
+</html>
 

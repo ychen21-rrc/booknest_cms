@@ -19,7 +19,6 @@ $stmt = $pdo->prepare("SELECT commenter_name, comment, created_at FROM comments 
 $stmt->execute([$review_id]);
 $comments = $stmt->fetchAll();
 ?>
-<h3>Leave a Comment</h3>
 
 <h3>Leave a Comment</h3>
 <form method="post">
@@ -30,13 +29,9 @@ $comments = $stmt->fetchAll();
     Enter CAPTCHA: <input name="captcha" required><br>
     <button type="submit">Post Comment</button>
 </form>
-
-    Name: <input name="name"><br>
-    Comment:<br>
-    <textarea name="comment" required></textarea><br>
-    <button type="submit">Post Comment</button>
-</form>
-
+<!--add line break and gray line div -->
+<!--if comments size is greater than 0 ,show below content -->
+<div style="margin: 20px 0; border-top: 1px solid #ccc;"></div>
 <h3>Comments</h3>
 <?php foreach ($comments as $c): ?>
     <p><strong><?= htmlspecialchars($c['commenter_name']) ?></strong> (<?= $c['created_at'] ?>)</p>
