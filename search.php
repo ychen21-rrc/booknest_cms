@@ -1,4 +1,4 @@
-
+<?php include 'includes/header.php'; ?>
 <?php
 require 'includes/db.php';
 
@@ -67,3 +67,4 @@ $cats = $pdo->query("SELECT * FROM categories")->fetchAll();
     <?php endfor; ?>
     </p>
 <?php endif; ?>
+<?php include 'includes/footer.php'; ?>

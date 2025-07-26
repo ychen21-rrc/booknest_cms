@@ -1,42 +1,60 @@
-<?php include 'includes/header.php'; ?>
-
-
 <?php
 require 'includes/db.php';
+require 'includes/header.php';
 
-$category_id = $_GET['category'] ?? null;
-
-if ($category_id) {
-    $stmt = $pdo->prepare("SELECT r.id, r.title, r.image_path, c.name AS category 
-                           FROM reviews r 
-                           JOIN categories c ON r.category_id = c.id 
-                           WHERE c.id = ? ORDER BY r.created_at DESC");
-    $stmt->execute([$category_id]);
-} else {
-    $stmt = $pdo->query("SELECT r.id, r.title, r.image_path, c.name AS category 
-                         FROM reviews r 
-                         JOIN categories c ON r.category_id = c.id 
-                         ORDER BY r.created_at DESC");
-}
-$reviews = $stmt->fetchAll();
-$cats = $pdo->query("SELECT * FROM categories")->fetchAll();
+$categories = $pdo->query("SELECT id, name FROM categories")->fetchAll();
 ?>
-<ul>
-    <li><a href="index.php">All</a></li>
-    <?php foreach ($cats as $cat): ?>
-        <li><a href="index.php?category=<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></a></li>
+
+<div class="container my-4">
+<h2 class="fw-bold mb-3">BookNest CMS</h2>
+
+<ul class="nav nav-tabs mb-3" id="categoryTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">All</button>
+    </li>
+    <?php foreach ($categories as $cat): ?>
+    <li class="nav-item" role="presentation">
+    <button class="nav-link" id="cat-<?= $cat['id'] ?>-tab" data-bs-toggle="tab" data-bs-target="#cat-<?= $cat['id'] ?>" type="button" role="tab">
+        <?= htmlspecialchars($cat['name']) ?>
+    </button>
+    </li>
     <?php endforeach; ?>
 </ul>
 
-<?php foreach ($reviews as $r): ?>
-    <div style="margin-bottom: 20px;">
-        <h2><a href="review.php?id=<?= $r['id'] ?>"><?= htmlspecialchars($r['title']) ?></a></h2>
-        <p><em>Category: <?= htmlspecialchars($r['category']) ?></em></p>
-        <?php if ($r['image_path']): ?>
-            <img src="<?= $r['image_path'] ?>" width="200">
-        <?php endif; ?>
+<div class="tab-content" id="categoryTabsContent">
+    <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+    <?php
+    $stmt = $pdo->query("SELECT r.*, c.name AS category FROM reviews r JOIN categories c ON r.category_id = c.id ORDER BY r.created_at DESC");
+    while ($r = $stmt->fetch()):
+    ?>
+        <div class="mb-3">
+        <h5>
+            <a href="review.php?id=<?= $r['id'] ?>">
+            <?= htmlspecialchars($r['title']) ?>
+            </a>
+            <small class="text-muted">(<?= htmlspecialchars($r['category']) ?>)</small>
+        </h5>
+        </div>
+    <?php endwhile; ?>
     </div>
-<?php endforeach; ?>
 
-
-<?php include 'includes/footer.php'; ?>
+    <?php foreach ($categories as $cat): ?>
+    <div class="tab-pane fade" id="cat-<?= $cat['id'] ?>" role="tabpanel" aria-labelledby="cat-<?= $cat['id'] ?>-tab">
+    <?php
+    $stmt = $pdo->prepare("SELECT * FROM reviews WHERE category_id = ? ORDER BY created_at DESC");
+    $stmt->execute([$cat['id']]);
+    while ($r = $stmt->fetch()):
+    ?>
+        <div class="mb-3">
+        <h5>
+            <a href="review.php?id=<?= $r['id'] ?>">
+            <?= htmlspecialchars($r['title']) ?>
+            </a>
+        </h5>
+        </div>
+    <?php endwhile; ?>
+    </div>
+    <?php endforeach; ?>
+</div>
+</div>
+<?php require 'includes/footer.php'; ?>
