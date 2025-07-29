@@ -1,7 +1,7 @@
 
 <?php
-require '../includes/auth.php';
-require '../includes/db.php';
+require 'includes/auth.php';
+require 'includes/db.php';
 
 if ($_SESSION['user']['role'] !== 'admin') {
     echo "Access denied.";

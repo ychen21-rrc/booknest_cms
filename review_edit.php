@@ -27,8 +27,8 @@ function resizeImage($src, $dest, $maxWidth = 600) {
     return true;
 }
 
-require '../includes/auth.php';
-require '../includes/db.php';
+require 'includes/auth.php';
+require 'includes/db.php';
 
 $id = $_GET['id'] ?? 0;
 $stmt = $pdo->prepare("SELECT * FROM reviews WHERE id = ?");

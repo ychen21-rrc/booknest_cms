@@ -1,23 +1,25 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BookNest CMS</title>
-    <link rel="stylesheet" href="assets/css/layout.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookNest</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
 
 </head>
 <body>
-<header>
-    <h1>BookNest CMS</h1>
-    <p>Content Management For Book Lovers</p>
-</header>
-<nav>
-    <a href="index.php">Home</a>
-    <a href="search.php">Search</a>
-    <a href="dashboard.php">Dashboard</a>
-</nav>
-<div class="wrapper">
-<main>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="index.php">📚 BookNest</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="index.php">Home</a>
+                <a class="nav-link" href="search.php">Search</a>
+                <a class="nav-link" href="dashboard.php">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
