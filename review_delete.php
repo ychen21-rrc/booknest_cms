@@ -1,7 +1,7 @@
 
 <?php
-require '../includes/auth.php';
-require '../includes/db.php';
+require 'includes/auth.php';
+require 'includes/db.php';
 
 $id = $_GET['id'] ?? 0;
 $stmt = $pdo->prepare("DELETE FROM reviews WHERE id = ?");

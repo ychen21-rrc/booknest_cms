@@ -1,5 +1,5 @@
 
-<?php include 'includes/header.php'; ?>
+<?php include 'header.php'; ?>
 
 <?php
 session_start();
@@ -31,4 +31,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <a href="register.php">Register</a>
 <?php if (!empty($error)) echo "<p>$error</p>"; ?>
 
-<?php include 'includes/footer.php'; ?>
+<?php include 'footer.php'; ?>

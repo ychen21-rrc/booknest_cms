@@ -1,5 +1,5 @@
 
-<?php include 'includes/header.php'; ?>
+<?php include 'header.php'; ?>
 
 <?php
 require 'includes/auth.php';
@@ -13,7 +13,7 @@ $reviews = $stmt->fetchAll();
     <h2>Admin Dashboard</h2>
     </p><a href="logout.php">Logout</a></p>
 </div>
-<p><a href="admin/review_create.php">+ Create New Review</a></p>
+<p><a href="review_create.php">+ Create New Review</a></p>
 <table border="1">
 <tr><th>Title</th><th>Author</th><th>Created</th><th>Actions</th></tr>
 <?php foreach ($reviews as $r): ?>
@@ -22,11 +22,11 @@ $reviews = $stmt->fetchAll();
     <td><?= htmlspecialchars($r['username']) ?></td>
     <td><?= $r['created_at'] ?></td>
     <td>
-        <a href="admin/review_edit.php?id=<?= $r['id'] ?>">Edit</a> | 
-        <a href="admin/review_delete.php?id=<?= $r['id'] ?>" onclick="return confirm('Delete review?');">Delete</a>
+        <a href="review_edit.php?id=<?= $r['id'] ?>">Edit</a> | 
+        <a href="review_delete.php?id=<?= $r['id'] ?>" onclick="return confirm('Delete review?');">Delete</a>
     </td>
 </tr>
 <?php endforeach; ?>
 </table>
 
-<?php include 'includes/footer.php'; ?>
+<?php include 'footer.php'; ?>

@@ -1,7 +1,7 @@
 
 <?php
-require '../includes/auth.php';
-require '../includes/db.php';
+require 'includes/auth.php';
+require 'includes/db.php';
 
 if (isset($_GET['delete'])) {
     $stmt = $pdo->prepare("DELETE FROM comments WHERE id = ?");

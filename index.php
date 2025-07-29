@@ -1,6 +1,6 @@
 <?php
 require 'includes/db.php';
-require 'includes/header.php';
+require 'header.php';
 
 $categories = $pdo->query("SELECT id, name FROM categories")->fetchAll();
 ?>
@@ -57,4 +57,4 @@ $categories = $pdo->query("SELECT id, name FROM categories")->fetchAll();
     <?php endforeach; ?>
 </div>
 </div>
-<?php require 'includes/footer.php'; ?>
+<?php require 'footer.php'; ?>

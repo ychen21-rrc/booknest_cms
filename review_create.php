@@ -31,8 +31,8 @@ function resizeImage($src, $dest, $maxWidth = 600) {
 }
 
 
-require '../includes/auth.php';
-require '../includes/db.php';
+require 'includes/auth.php';
+require 'includes/db.php';
 
 $categories = $pdo->query("SELECT id, name FROM categories")->fetchAll();
 
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $stmt = $pdo->prepare("INSERT INTO reviews (title, content, image_path, category_id, user_id) VALUES (?, ?, ?, ?, ?)");
     $stmt->execute([$title, $content, $image_path, $category_id, $user_id]);
-    header("Location: ../dashboard.php");
+    header("Location: dashboard.php");
     exit;
 }
 ?>
