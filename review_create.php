@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_FILES['image']['name'])) {
         $tmp = $_FILES['image']['tmp_name'];
         $imgName = basename($_FILES['image']['name']);
-        $dest = "../uploads/images/" . $imgName;
+        $dest = "uploads/images/" . $imgName;
         if (getimagesize($tmp)) {
             if (move_uploaded_file($tmp, $dest)) resizeImage($dest, $dest);
             $image_path = "uploads/images/" . $imgName;

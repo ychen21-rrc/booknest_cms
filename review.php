@@ -52,11 +52,11 @@ if (!$r) {
                 <div class="review-info mb-4">
                     <div class="info-item">
                         <i class="bi bi-person-circle text-muted me-2"></i>
-                        <strong>Reviewed by:</strong> <?= htmlspecialchars($r['username']) ?>
+                        <strong>Reviewed by: </strong> <?= htmlspecialchars($r['username']) ?>
                     </div>
                     <div class="info-item">
                         <i class="bi bi-calendar-event text-muted me-2"></i>
-                        <strong>Published:</strong> <?= date('F j, Y', strtotime($r['created_at'])) ?>
+                        <strong>Published: </strong> <?= date('F j, Y', strtotime($r['created_at'])) ?>
                     </div>
                 </div>
 

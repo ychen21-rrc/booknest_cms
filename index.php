@@ -6,7 +6,7 @@ $categories = $pdo->query("SELECT id, name FROM categories ORDER BY name")->fetc
 
 // Get filter parameters
 $selectedCategory = $_GET['category'] ?? 'all';
-$sortBy = $_GET['sort'] ?? 'title-az';
+$sortBy = $_GET['sort'] ?? 'date-new';
 $searchTerm = $_GET['search'] ?? '';
 
 // Pagination settings
@@ -144,10 +144,10 @@ function buildUrl($newParams = []) {
         <div class="filter-group">
             <form method="GET" action="" class="d-flex align-items-center">
                 <select class="form-select sort-select" name="sort" onchange="this.form.submit()">
-                    <option value="title-az" <?= $sortBy === 'title-az' ? 'selected' : '' ?>>Name: A to Z</option>
-                    <option value="title-za" <?= $sortBy === 'title-za' ? 'selected' : '' ?>>Name: Z to A</option>
                     <option value="date-new" <?= $sortBy === 'date-new' ? 'selected' : '' ?>>Date: Newest First</option>
                     <option value="date-old" <?= $sortBy === 'date-old' ? 'selected' : '' ?>>Date: Oldest First</option>
+                    <option value="title-az" <?= $sortBy === 'title-az' ? 'selected' : '' ?>>Name: A to Z</option>
+                    <option value="title-za" <?= $sortBy === 'title-za' ? 'selected' : '' ?>>Name: Z to A</option>     
                 </select>
                 <!-- Hidden fields to preserve other filters -->
                 <input type="hidden" name="search" value="<?= htmlspecialchars($searchTerm) ?>">

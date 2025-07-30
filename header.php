@@ -32,18 +32,6 @@ $userName = $isLoggedIn ? $_SESSION['user']['username'] : '';
                     <a class="nav-link" href="index.php">
                         <i class="bi bi-house-door me-1"></i>Home
                     </a>
-
-                     <!-- Contact - Always visible -->
-                    <a class="nav-link" href="contact.php">
-                        <i class="bi bi-envelope me-1"></i>Contact
-                    </a>
-                    
-                    <!-- Dashboard - Only for logged in users (admin/editor) -->
-                    <!-- <?php if ($isLoggedIn): ?>
-                        <a class="nav-link me-3" href="dashboard.php">
-                            <i class="bi bi-speedometer2 me-1"></i>Dashboard
-                        </a>
-                    <?php endif; ?> -->
                     
                     <?php if ($isLoggedIn): ?>
                         <!-- User Dropdown for logged in users -->
