@@ -170,7 +170,7 @@ function buildUrl($newParams = []) {
             <?php foreach ($reviews as $review): ?>
                 <div class="book-card">
                     <div class="book-image" 
-                         style="background-image: url('<?= $review['image_path'] ? htmlspecialchars($review['image_path']) : 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop' ?>')">
+                         style="background-image: url('<?= $review['image_path'] ? htmlspecialchars($review['image_path']) : 'icons/empty.png' ?>')">
                         <div class="book-category">
                             <?= htmlspecialchars($review['category_name']) ?>
                         </div>
