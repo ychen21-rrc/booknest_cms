@@ -5,73 +5,15 @@
     --light-gray: #F8F9FA;
 }
 
-/* Page layout fix - ensure footer stays at bottom */
-html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    /* Prevent horizontal scrolling */
-    overflow-x: hidden;
-    max-width: 100vw;
-}
-
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--light-gray);
-    /* Use flexbox layout to keep footer at bottom */
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    /* Ensure body doesn't exceed viewport width */
-    box-sizing: border-box;
-}
-
-/* Ensure main content area can stretch */
-.container-fluid {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    /* Prevent content from extending beyond viewport */
-    max-width: 100vw;
-    box-sizing: border-box;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-/* Content wrapper for login and register pages */
-.content-wrapper {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: calc(100vh - 200px); /* Subtract approximate height of navbar and footer */
-    padding: 2rem 0;
-    width: 100%;
-    max-width: 100vw;
-    box-sizing: border-box;
-}
-
-/* Global container fixes to prevent horizontal overflow */
-.container, .container-fluid {
-    max-width: 100%;
-    box-sizing: border-box;
-    padding-left: 15px;
-    padding-right: 15px;
-}
-
-/* Ensure all rows don't exceed container width */
-.row {
-    margin-left: -15px;
-    margin-right: -15px;
-    max-width: calc(100% + 30px);
 }
 
 .navbar {
     background-color: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 1rem 0;
-    /* Ensure navbar doesn't participate in flex stretching */
-    flex-shrink: 0;
 }
 
 .navbar-brand {
@@ -348,15 +290,7 @@ body {
     background: var(--dark-blue);
     color: white;
     padding: 3rem 0 1rem;
-    /* Remove margin-top and use margin-top: auto for sticky footer */
-    margin-top: auto;
-    /* Ensure footer doesn't participate in flex stretching */
-    flex-shrink: 0;
-    /* Prevent footer from extending beyond viewport */
-    width: 100%;
-    max-width: 100vw;
-    box-sizing: border-box;
-    overflow-x: hidden;
+    margin-top: 4rem;
 }
 
 .footer h5 {
