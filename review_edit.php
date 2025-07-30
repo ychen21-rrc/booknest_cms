@@ -1,30 +1,34 @@
 <?php
 
+require 'vendor/autoload.php';
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+
 function resizeImage($src, $dest, $maxWidth = 600) {
-    list($width, $height, $type) = getimagesize($src);
-    $newWidth = $maxWidth;
-    $newHeight = floor($height * ($maxWidth / $width));
-
-    $srcImg = null;
-    switch ($type) {
-        case IMAGETYPE_JPEG: $srcImg = imagecreatefromjpeg($src); break;
-        case IMAGETYPE_PNG: $srcImg = imagecreatefrompng($src); break;
-        case IMAGETYPE_GIF: $srcImg = imagecreatefromgif($src); break;
-        default: return false;
+    try {
+        // Create ImageManager instance with GD driver
+        $manager = new ImageManager(new Driver());
+        
+        // Read the image
+        $image = $manager->read($src);
+        
+        // Get original dimensions
+        $originalWidth = $image->width();
+        $originalHeight = $image->height();
+        
+        // Resize if width exceeds maximum
+        if ($originalWidth > $maxWidth) {
+            $image->scale(width: $maxWidth);
+        }
+        
+        // Save the image with auto-format detection
+        $image->save($dest);
+        
+        return true;
+    } catch (Exception $e) {
+        error_log("Image resize error: " . $e->getMessage());
+        return false;
     }
-
-    $dstImg = imagecreatetruecolor($newWidth, $newHeight);
-    imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-    switch ($type) {
-        case IMAGETYPE_JPEG: imagejpeg($dstImg, $dest); break;
-        case IMAGETYPE_PNG: imagepng($dstImg, $dest); break;
-        case IMAGETYPE_GIF: imagegif($dstImg, $dest); break;
-    }
-
-    imagedestroy($srcImg);
-    imagedestroy($dstImg);
-    return true;
 }
 
 require 'includes/auth.php';
@@ -41,6 +45,14 @@ $stmt->execute([$id]);
 $review = $stmt->fetch();
 
 if (!$review) {
+    $_SESSION['error_message'] = "Review not found.";
+    header("Location: dashboard.php");
+    exit;
+}
+
+// Check if user owns this review or is admin
+if ($review['user_id'] != $_SESSION['user']['id'] && $_SESSION['user']['role'] !== 'admin') {
+    $_SESSION['error_message'] = "Access denied. You can only edit your own reviews.";
     header("Location: dashboard.php");
     exit;
 }
@@ -53,26 +65,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category_id = $_POST['category_id'] ?? null;
 
     $image_path = $review['image_path'];
-    if (!empty($_FILES['image']['name'])) {
+    $deleteOldImage = false;
+    
+    if (!empty($_FILES['image']['name']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $tmp = $_FILES['image']['tmp_name'];
-        $imgName = basename($_FILES['image']['name']);
-        $dest = "uploads/images/" . $imgName;
-        if (getimagesize($tmp)) {
-            if (move_uploaded_file($tmp, $dest)) resizeImage($dest, $dest);
-            $image_path = "uploads/images/" . $imgName;
+        $originalName = $_FILES['image']['name'];
+        $fileExtension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        
+        // Validate file type
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (in_array($fileExtension, $allowedTypes)) {
+            // Generate unique filename
+            $uniqueName = uniqid() . '_' . time() . '.' . $fileExtension;
+            $dest = "uploads/images/" . $uniqueName;
+            
+            // Ensure upload directory exists
+            if (!is_dir('uploads/images/')) {
+                mkdir('uploads/images/', 0755, true);
+            }
+            
+            // Move file and resize
+            if (move_uploaded_file($tmp, $dest)) {
+                if (resizeImage($dest, $dest)) {
+                    $deleteOldImage = true;
+                    $image_path = $dest;
+                } else {
+                    // If resize fails, remove the file
+                    unlink($dest);
+                    $_SESSION['error_message'] = "Failed to process the uploaded image.";
+                }
+            } else {
+                $_SESSION['error_message'] = "Failed to upload the image file.";
+            }
+        } else {
+            $_SESSION['error_message'] = "Invalid file type. Please upload JPG, PNG, GIF, or WebP images only.";
         }
     }
 
-    $stmt = $pdo->prepare("UPDATE reviews SET title=?, content=?, image_path=?, category_id=? WHERE id=?");
-    $stmt->execute([$title, $content, $image_path, $category_id, $id]);
-    header("Location: dashboard.php");
-    exit;
+    // Only proceed if no errors occurred
+    if (!isset($_SESSION['error_message'])) {
+        $stmt = $pdo->prepare("UPDATE reviews SET title=?, content=?, image_path=?, category_id=?, updated_at=NOW() WHERE id=?");
+        $result = $stmt->execute([$title, $content, $image_path, $category_id, $id]);
+        
+        if ($result) {
+            // Delete old image if a new one was uploaded
+            if ($deleteOldImage && $review['image_path'] && file_exists($review['image_path'])) {
+                unlink($review['image_path']);
+            }
+            
+            $_SESSION['success_message'] = "Review updated successfully!";
+            header("Location: dashboard.php");
+            exit;
+        } else {
+            $_SESSION['error_message'] = "Failed to update review. Please try again.";
+        }
+    }
 }
 ?>
 
 <?php include 'header.php'; ?>
 
 <div class="container mt-4">
+    <!-- Display success or error messages -->
+    <?php if (isset($_SESSION['success_message'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i><?= $_SESSION['success_message'] ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php unset($_SESSION['success_message']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['error_message'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i><?= $_SESSION['error_message'] ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php unset($_SESSION['error_message']); ?>
+    <?php endif; ?>
+
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="page-title mb-0">Edit Review</h1>
@@ -86,7 +156,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="col-md-8">
             <div class="dashboard-card">
                 <div class="dashboard-card-body">
-                    <form method="post" enctype="multipart/form-data">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-pencil-square text-primary me-2" style="font-size: 1.5rem;"></i>
+                        <h5 class="card-title mb-0">Edit Review Details</h5>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" id="editForm">
                         <div class="mb-3">
                             <label for="title" class="form-label">
                                 <i class="bi bi-book me-2"></i>Review Title
@@ -117,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="bi bi-image me-2"></i>Cover Image
                             </label>
                             <input type="file" class="form-control" id="image" name="image" accept="image/*">
-                            <div class="form-text">Leave empty to keep current image</div>
+                            <div class="form-text">Leave empty to keep current image. Supported: JPG, PNG, GIF, WebP (Max 5MB)</div>
                         </div>
 
                         <div class="mb-4">
@@ -150,7 +225,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if ($review['image_path']): ?>
                         <img src="<?= htmlspecialchars($review['image_path']) ?>" 
                              class="img-fluid rounded preview-image" 
-                             alt="Current book cover">
+                             alt="Current book cover"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="preview-placeholder" style="display: none;">
+                            <i class="bi bi-image-fill display-4 text-muted"></i>
+                            <p class="text-muted mt-2">Image not found</p>
+                        </div>
                     <?php else: ?>
                         <div class="preview-placeholder">
                             <i class="bi bi-image display-4 text-muted"></i>
@@ -167,9 +247,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div>
                                 <i class="bi bi-clock me-1"></i>
-                                Last Updated: <?= date('M j, Y', strtotime($review['updated_at'])) ?>
+                                Last Updated: <?= date('M j, Y g:i A', strtotime($review['updated_at'])) ?>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Upload Tips -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-info-circle me-2"></i>Image Guidelines
+                    </h5>
+                    <div class="small text-muted">
+                        <p class="mb-2">• Recommended size: 600x400 pixels or similar ratio</p>
+                        <p class="mb-2">• Supported formats: JPG, PNG, GIF, WebP</p>
+                        <p class="mb-2">• Maximum file size: 5MB</p>
+                        <p class="mb-0">• Images will be automatically resized to 600px width</p>
                     </div>
                 </div>
             </div>
@@ -254,7 +349,23 @@ tinymce.init({
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-    document.querySelector("form").addEventListener("submit", function (e) {
+    const form = document.getElementById('editForm');
+    const imageInput = document.getElementById('image');
+    
+    // File size validation
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                alert('File size must be less than 5MB.');
+                e.target.value = '';
+                return;
+            }
+        }
+    });
+    
+    form.addEventListener("submit", function (e) {
         const content = tinymce.get('content').getContent({ format: 'text' }).trim();
         if (!content) {
             alert("Content cannot be empty.");

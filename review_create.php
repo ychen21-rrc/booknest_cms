@@ -1,30 +1,34 @@
 <?php
 
+require 'vendor/autoload.php';
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+
 function resizeImage($src, $dest, $maxWidth = 600) {
-    list($width, $height, $type) = getimagesize($src);
-    $newWidth = $maxWidth;
-    $newHeight = floor($height * ($maxWidth / $width));
-
-    $srcImg = null;
-    switch ($type) {
-        case IMAGETYPE_JPEG: $srcImg = imagecreatefromjpeg($src); break;
-        case IMAGETYPE_PNG: $srcImg = imagecreatefrompng($src); break;
-        case IMAGETYPE_GIF: $srcImg = imagecreatefromgif($src); break;
-        default: return false;
+    try {
+        // Create ImageManager instance with GD driver
+        $manager = new ImageManager(new Driver());
+        
+        // Read the image
+        $image = $manager->read($src);
+        
+        // Get original dimensions
+        $originalWidth = $image->width();
+        $originalHeight = $image->height();
+        
+        // Resize if width exceeds maximum
+        if ($originalWidth > $maxWidth) {
+            $image->scale(width: $maxWidth);
+        }
+        
+        // Save the image with auto-format detection
+        $image->save($dest);
+        
+        return true;
+    } catch (Exception $e) {
+        error_log("Image resize error: " . $e->getMessage());
+        return false;
     }
-
-    $dstImg = imagecreatetruecolor($newWidth, $newHeight);
-    imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-    switch ($type) {
-        case IMAGETYPE_JPEG: imagejpeg($dstImg, $dest); break;
-        case IMAGETYPE_PNG: imagepng($dstImg, $dest); break;
-        case IMAGETYPE_GIF: imagegif($dstImg, $dest); break;
-    }
-
-    imagedestroy($srcImg);
-    imagedestroy($dstImg);
-    return true;
 }
 
 require 'includes/auth.php';
@@ -44,26 +48,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user']['id'];
 
     $image_path = null;
-    if (!empty($_FILES['image']['name'])) {
+    if (!empty($_FILES['image']['name']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $tmp = $_FILES['image']['tmp_name'];
-        $imgName = basename($_FILES['image']['name']);
-        $dest = "uploads/images/" . $imgName;
-        if (getimagesize($tmp)) {
-            if (move_uploaded_file($tmp, $dest)) resizeImage($dest, $dest);
-            $image_path = "uploads/images/" . $imgName;
+        $originalName = $_FILES['image']['name'];
+        $fileExtension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        
+        // Validate file type
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        if (in_array($fileExtension, $allowedTypes)) {
+            // Generate unique filename
+            $uniqueName = uniqid() . '_' . time() . '.' . $fileExtension;
+            $dest = "uploads/images/" . $uniqueName;
+            
+            // Ensure upload directory exists
+            if (!is_dir('uploads/images/')) {
+                mkdir('uploads/images/', 0755, true);
+            }
+            
+            // Move file and resize
+            if (move_uploaded_file($tmp, $dest)) {
+                if (resizeImage($dest, $dest)) {
+                    $image_path = $dest;
+                } else {
+                    // If resize fails, remove the file
+                    unlink($dest);
+                    $_SESSION['error_message'] = "Failed to process the uploaded image.";
+                }
+            } else {
+                $_SESSION['error_message'] = "Failed to upload the image file.";
+            }
+        } else {
+            $_SESSION['error_message'] = "Invalid file type. Please upload JPG, PNG, GIF, or WebP images only.";
         }
     }
 
-    $stmt = $pdo->prepare("INSERT INTO reviews (title, content, image_path, category_id, user_id) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$title, $content, $image_path, $category_id, $user_id]);
-    header("Location: dashboard.php");
-    exit;
+    // Only proceed if no errors occurred
+    if (!isset($_SESSION['error_message'])) {
+        $stmt = $pdo->prepare("INSERT INTO reviews (title, content, image_path, category_id, user_id) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $content, $image_path, $category_id, $user_id]);
+        $_SESSION['success_message'] = "Review created successfully!";
+        header("Location: dashboard.php");
+        exit;
+    }
 }
 ?>
 
 <?php include 'header.php'; ?>
 
 <div class="container mt-4">
+    <!-- Display success or error messages -->
+    <?php if (isset($_SESSION['success_message'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i><?= $_SESSION['success_message'] ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php unset($_SESSION['success_message']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['error_message'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i><?= $_SESSION['error_message'] ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php unset($_SESSION['error_message']); ?>
+    <?php endif; ?>
+
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="page-title mb-0">Create New Review</h1>
@@ -82,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h5 class="card-title mb-0">Book Review Details</h5>
                     </div>
 
-                    <form method="post" enctype="multipart/form-data">
+                    <form method="post" enctype="multipart/form-data" id="reviewForm">
                         <div class="mb-3">
                             <label for="title" class="form-label">
                                 <i class="bi bi-book me-2"></i>Review Title
@@ -92,6 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    id="title" 
                                    name="title" 
                                    placeholder="Enter the book title or review title" 
+                                   value="<?= htmlspecialchars($_POST['title'] ?? '') ?>"
                                    required>
                         </div>
 
@@ -101,7 +151,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </label>
                             <select class="form-select" name="category_id" id="category_id">
                                 <?php foreach ($categories as $cat): ?>
-                                    <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                                    <option value="<?= $cat['id'] ?>" <?= ($_POST['category_id'] ?? '') == $cat['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($cat['name']) ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -111,14 +163,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="bi bi-image me-2"></i>Cover Image
                             </label>
                             <input type="file" class="form-control" id="image" name="image" accept="image/*">
-                            <div class="form-text">Upload a book cover image (JPG, PNG, or GIF)</div>
+                            <div class="form-text">Upload a book cover image (JPG, PNG, GIF, or WebP - Max 5MB)</div>
                         </div>
 
                         <div class="mb-4">
                             <label for="content" class="form-label">
                                 <i class="bi bi-card-text me-2"></i>Review Content
                             </label>
-                            <textarea name="content" id="content" class="form-control" rows="10" placeholder="Write your book review here..."></textarea>
+                            <textarea name="content" id="content" class="form-control" rows="10" placeholder="Write your book review here..."><?= htmlspecialchars($_POST['content'] ?? '') ?></textarea>
                         </div>
 
                         <div class="d-flex gap-2">
@@ -181,9 +233,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </h5>
                     <div class="small text-muted">
                         <p class="mb-2">• Recommended size: 600x400 pixels or similar ratio</p>
-                        <p class="mb-2">• Supported formats: JPG, PNG, GIF</p>
+                        <p class="mb-2">• Supported formats: JPG, PNG, GIF, WebP</p>
                         <p class="mb-2">• Maximum file size: 5MB</p>
-                        <p class="mb-0">• Use high-quality book cover images when possible</p>
+                        <p class="mb-0">• Images will be automatically resized to 600px width</p>
                     </div>
                 </div>
             </div>
@@ -265,7 +317,23 @@ tinymce.init({
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-    document.querySelector("form").addEventListener("submit", function (e) {
+    const form = document.getElementById('reviewForm');
+    const imageInput = document.getElementById('image');
+    
+    // File size validation
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                alert('File size must be less than 5MB.');
+                e.target.value = '';
+                return;
+            }
+        }
+    });
+    
+    form.addEventListener("submit", function (e) {
         const content = tinymce.get('content').getContent({ format: 'text' }).trim();
         if (!content) {
             alert("Content cannot be empty.");
