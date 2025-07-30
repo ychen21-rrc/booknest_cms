@@ -1,2 +1,18 @@
 RewriteEngine On
-RewriteRule ^book/([0-9]+) book.php?id=$1 [L]
+
+# SEO-friendly URLs for reviews
+# Format: /review/123/book-title-slug/
+RewriteRule ^review/([0-9]+)/([a-zA-Z0-9\-]+)/?$ review.php?id=$1&slug=$2 [L,QSA]
+
+# Category pages
+# Format: /category/fiction/
+RewriteRule ^category/([a-zA-Z0-9\-]+)/?$ index.php?category_slug=$1 [L,QSA]
+
+# Search results
+# Format: /search/keyword/
+RewriteRule ^search/([^/]+)/?$ index.php?search=$1 [L,QSA]
+
+# Admin pages (keep as is)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/(dashboard|login|register|logout)

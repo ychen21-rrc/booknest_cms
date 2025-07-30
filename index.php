@@ -116,7 +116,7 @@ function buildUrl($newParams = []) {
 </div>
 
 <!-- Page Title -->
-<h1 class="page-title">Our Products</h1>
+<h1 class="page-title">Our Books</h1>
 
 <!-- Filters Section -->
 <div class="container">
