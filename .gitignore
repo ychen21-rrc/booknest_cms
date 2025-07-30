@@ -1,0 +1,36 @@
+# Dependency directory
+/vendor/
+
+# Environment configuration
+.env
+.env.*
+
+# Log files
+*.log
+
+# Cache and temporary files
+/cache/
+/tmp/
+*.tmp
+*.temp
+
+# IDE and editor files
+*.sublime-workspace
+*.sublime-project
+.idea/
+.vscode/
+*.swp
+*.bak
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# PHPUnit test results
+/phpunit.result.cache
+
+# Composer lock file (optional)
+/composer.lock
+
+
+/uploads/images/
