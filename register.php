@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Username already taken.";
         } else {
             $hashed = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, 'editor')");
+            $stmt = $pdo->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, 'visitor')");
             $stmt->execute([$username, $hashed]);
             $success = "Account created successfully! Please login.";
         }

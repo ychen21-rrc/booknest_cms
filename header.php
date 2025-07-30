@@ -1,5 +1,10 @@
 <?php
 session_start();
+
+// Check if user is logged in and get their role
+$isLoggedIn = isset($_SESSION['user']);
+$userRole = $isLoggedIn ? $_SESSION['user']['role'] : 'visitor';
+$userName = $isLoggedIn ? $_SESSION['user']['username'] : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -16,29 +21,62 @@ session_start();
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="index.php">📚 BookNest</a>
-            <div class="navbar-nav ms-auto d-flex align-items-center">
-                <a class="nav-link" href="index.php">
-                    <i class="bi bi-house-door me-1"></i>Home
-                </a>
-                <a class="nav-link me-3" href="dashboard.php">
-                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
-                </a>
-                
-                <?php if (isset($_SESSION['user_name'])): ?>
-                    <!-- User Dropdown -->
-                    <div class="dropdown">
-                        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <?= htmlspecialchars($_SESSION['user_name']) ?>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="logout.php">
-                                <i class="bi bi-box-arrow-right me-2"></i>Logout
-                            </a></li>
-                        </ul>
-                    </div>
-                <?php else: ?>
-                    <a class="btn btn-outline-primary" href="login.php">Login</a>
-                <?php endif; ?>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto d-flex align-items-center">
+                    <!-- Home - Always visible -->
+                    <a class="nav-link" href="index.php">
+                        <i class="bi bi-house-door me-1"></i>Home
+                    </a>
+                    
+                    <!-- Dashboard - Only for logged in users (admin/editor) -->
+                    <!-- <?php if ($isLoggedIn): ?>
+                        <a class="nav-link me-3" href="dashboard.php">
+                            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        </a>
+                    <?php endif; ?> -->
+                    
+                    <?php if ($isLoggedIn): ?>
+                        <!-- User Dropdown for logged in users -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle me-1"></i>
+                                <?= htmlspecialchars($userName) ?>
+                                <span class="badge bg-secondary ms-1"><?= ucfirst($userRole) ?></span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><h6 class="dropdown-header">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    <?= ucfirst($userRole) ?> Account
+                                </h6></li>
+                                <?php if ($userRole === 'admin' || $userRole === 'editor'): ?>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="dashboard.php">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a></li>
+                                <?php endif; ?>
+                                <?php if ($userRole === 'admin'): ?>
+                                    <li><a class="dropdown-item" href="user_manage.php">
+                                        <i class="bi bi-people me-2"></i>Manage Users
+                                    </a></li>
+                                <?php endif; ?>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="logout.php">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </a></li>
+                            </ul>
+                        </div>
+                    <?php else: ?>
+                        <!-- Login button for visitors -->
+                        <a class="btn btn-outline-primary" href="login.php">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </nav>

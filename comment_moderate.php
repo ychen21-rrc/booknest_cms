@@ -7,7 +7,9 @@ if (isset($_SESSION['user'])) {
     $_SESSION['user_name'] = $_SESSION['user']['username'];
 }
 
-if (isset($_GET['delete'])) {
+$userRole = $_SESSION['user']['role'];
+
+if (isset($_GET['delete']) && $userRole === 'admin') {
     $stmt = $pdo->prepare("DELETE FROM comments WHERE id = ?");
     $stmt->execute([$_GET['delete']]);
     $success = "Comment deleted successfully!";
@@ -35,6 +37,13 @@ $comments = $stmt->fetchAll();
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle me-2"></i><?= $success ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($userRole !== 'admin'): ?>
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Note:</strong> You can view comments but only administrators can delete them.
         </div>
     <?php endif; ?>
 
@@ -106,11 +115,15 @@ $comments = $stmt->fetchAll();
                                     </small>
                                 </td>
                                 <td>
-                                    <a href="?delete=<?= $c['id'] ?>" 
-                                       class="btn btn-outline-danger btn-sm" 
-                                       onclick="return confirm('Are you sure you want to delete this comment?');">
-                                        <i class="bi bi-trash me-1"></i>Delete
-                                    </a>
+                                    <?php if ($userRole === 'admin'): ?>
+                                        <a href="?delete=<?= $c['id'] ?>" 
+                                           class="btn btn-outline-danger btn-sm" 
+                                           onclick="return confirm('Are you sure you want to delete this comment?');">
+                                            <i class="bi bi-trash me-1"></i>Delete
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-muted small">Admin only</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -161,6 +174,13 @@ $comments = $stmt->fetchAll();
                         <p class="mb-2">• Remove spam or inappropriate content</p>
                         <p class="mb-2">• Delete comments with offensive language</p>
                         <p class="mb-0">• Keep constructive criticism and genuine reviews</p>
+                        <?php if ($userRole !== 'admin'): ?>
+                            <hr class="my-2">
+                            <p class="mb-0 text-info">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Contact an administrator to delete comments
+                            </p>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -241,6 +261,12 @@ $comments = $stmt->fetchAll();
     background-color: #d4edda;
     border-color: #c3e6cb;
     color: #155724;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
 }
 
 .btn-outline-danger:hover {

@@ -13,7 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['user'] = ['id' => $user['id'], 'username' => $user['username'], 'role' => $user['role']];
         $_SESSION['user_name'] = $user['username']; // Set for header display
-        header("Location: dashboard.php");
+        if ($user['role'] === 'admin') {
+            header("Location: dashboard.php");
+        } elseif ($user['role'] === 'editor') {
+            header("Location: dashboard.php");
+        } else {
+            header("Location: index.php");
+        }
         exit;
     } else {
         $error = "Invalid credentials.";

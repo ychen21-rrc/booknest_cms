@@ -2,10 +2,8 @@
 require 'includes/auth.php';
 require 'includes/db.php';
 
-if ($_SESSION['user']['role'] !== 'admin') {
-    echo "Access denied.";
-    exit;
-}
+// Only admin can access this page
+requireAdmin();
 
 // Set user name in session for header display
 if (isset($_SESSION['user'])) {
@@ -14,23 +12,40 @@ if (isset($_SESSION['user'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['new_user']) && !empty($_POST['new_pass']) && !empty($_POST['role'])) {
-        $hashed = password_hash($_POST['new_pass'], PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
-        $stmt->execute([$_POST['new_user'], $hashed, $_POST['role']]);
-        $success = "User created successfully!";
+        // Check if username already exists
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+        $stmt->execute([$_POST['new_user']]);
+        if ($stmt->fetch()) {
+            $error = "Username already exists. Please choose a different username.";
+        } else {
+            $hashed = password_hash($_POST['new_pass'], PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+            $stmt->execute([$_POST['new_user'], $hashed, $_POST['role']]);
+            $success = "User created successfully!";
+        }
     }
 
     if (!empty($_POST['update_id']) && !empty($_POST['update_role'])) {
-        $stmt = $pdo->prepare("UPDATE users SET role = ? WHERE id = ?");
-        $stmt->execute([$_POST['update_role'], $_POST['update_id']]);
-        $success = "User role updated successfully!";
+        // Prevent admin from changing their own role
+        if ($_POST['update_id'] == $_SESSION['user']['id']) {
+            $error = "You cannot change your own role.";
+        } else {
+            $stmt = $pdo->prepare("UPDATE users SET role = ? WHERE id = ?");
+            $stmt->execute([$_POST['update_role'], $_POST['update_id']]);
+            $success = "User role updated successfully!";
+        }
     }
 }
 
 if (isset($_GET['delete'])) {
-    $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-    $stmt->execute([$_GET['delete']]);
-    $success = "User deleted successfully!";
+    // Prevent admin from deleting themselves
+    if ($_GET['delete'] == $_SESSION['user']['id']) {
+        $error = "You cannot delete your own account.";
+    } else {
+        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$_GET['delete']]);
+        $success = "User deleted successfully!";
+    }
 }
 
 $users = $pdo->query("SELECT * FROM users ORDER BY created_at DESC")->fetchAll();
@@ -50,6 +65,13 @@ $users = $pdo->query("SELECT * FROM users ORDER BY created_at DESC")->fetchAll()
     <?php if (!empty($success)): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle me-2"></i><?= $success ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($error)): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i><?= $error ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
@@ -84,6 +106,7 @@ $users = $pdo->query("SELECT * FROM users ORDER BY created_at DESC")->fetchAll()
                     <select class="form-select" name="role" id="role">
                         <option value="editor">Editor</option>
                         <option value="admin">Admin</option>
+                        <option value="visitor">Visitor</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
@@ -129,19 +152,30 @@ $users = $pdo->query("SELECT * FROM users ORDER BY created_at DESC")->fetchAll()
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-person-circle me-2 text-muted"></i>
                                         <strong><?= htmlspecialchars($u['username']) ?></strong>
+                                        <?php if ($u['id'] == $_SESSION['user']['id']): ?>
+                                            <span class="badge bg-info ms-2">You</span>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                                 <td>
-                                    <form method="post" class="d-flex align-items-center">
-                                        <input type="hidden" name="update_id" value="<?= $u['id'] ?>">
-                                        <select name="update_role" class="form-select form-select-sm me-2" style="width: auto;">
-                                            <option value="editor" <?= $u['role'] === 'editor' ? 'selected' : '' ?>>Editor</option>
-                                            <option value="admin" <?= $u['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
-                                        </select>
-                                        <button type="submit" class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-check"></i>
-                                        </button>
-                                    </form>
+                                    <?php if ($u['id'] == $_SESSION['user']['id']): ?>
+                                        <!-- Current user cannot change their own role -->
+                                        <span class="badge bg-<?= $u['role'] === 'admin' ? 'danger' : 'primary' ?>">
+                                            <?= ucfirst($u['role']) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <form method="post" class="d-flex align-items-center">
+                                            <input type="hidden" name="update_id" value="<?= $u['id'] ?>">
+                                            <select name="update_role" class="form-select form-select-sm me-2" style="width: auto;">
+                                                <option value="editor" <?= $u['role'] === 'editor' ? 'selected' : '' ?>>Editor</option>
+                                                <option value="admin" <?= $u['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
+                                                <option value="visitor" <?= $u['role'] === 'visitor' ? 'selected' : '' ?>>Visitor</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <small class="text-muted">
@@ -150,11 +184,16 @@ $users = $pdo->query("SELECT * FROM users ORDER BY created_at DESC")->fetchAll()
                                     </small>
                                 </td>
                                 <td>
-                                    <a href="?delete=<?= $u['id'] ?>" 
-                                       class="btn btn-outline-danger btn-sm" 
-                                       onclick="return confirm('Are you sure you want to delete this user?');">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </a>
+                                    <?php if ($u['id'] == $_SESSION['user']['id']): ?>
+                                        <!-- Current user cannot delete themselves -->
+                                        <span class="text-muted small">Cannot delete yourself</span>
+                                    <?php else: ?>
+                                        <a href="?delete=<?= $u['id'] ?>" 
+                                           class="btn btn-outline-danger btn-sm" 
+                                           onclick="return confirm('Are you sure you want to delete this user? This action cannot be undone.');">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -226,6 +265,12 @@ $users = $pdo->query("SELECT * FROM users ORDER BY created_at DESC")->fetchAll()
     background-color: #d4edda;
     border-color: #c3e6cb;
     color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
 }
 </style>
 
